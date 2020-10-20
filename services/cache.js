@@ -6,13 +6,19 @@ const redisUrl = 'redis://127.0.0.1:6379';
 const client = redis.createClient(redisUrl);
 
 // make redis get method have promise
-client.get = promisify(client.get);
+client.hget = promisify(client.hget);
 
-mongoose.Query.prototype.cache = function (expireSecond = 0) {
+mongoose.Query.prototype.cache = function (options = {}) {
   this.useCache = true;
-  this.expireSecond = expireSecond;
+  this.hashKey = JSON.stringify(options.key || '');
+  this.expireSecond = options.expire || 0;
   return this;
 };
+// mongoose.Query.prototype.cache = function (expireSecond = 0) {
+//   this.useCache = true;
+//   this.expireSecond = expireSecond;
+//   return this;
+// };
 
 // 複寫 mongoose exec 方法
 const exec = mongoose.Query.prototype.exec;
@@ -31,7 +37,7 @@ mongoose.Query.prototype.exec = async function () {
   );
 
   // 取出 redis 值, 若有值直接 return, 不執行 mongo exec
-  const cacheValue = await client.get(key);
+  const cacheValue = await client.hget(this.hashKey, key);
 
   if (cacheValue) {
     console.log('from cache');
@@ -49,11 +55,23 @@ mongoose.Query.prototype.exec = async function () {
 
   // 判斷是否有設定過期時間
   if (this.expireSecond) {
-    client.set(key, JSON.stringify(result), 'EX', this.expireSecond);
+    client.hset(
+      this.hashKey,
+      key,
+      JSON.stringify(result),
+      'EX',
+      this.expireSecond
+    );
   } else {
-    client.set(key, JSON.stringify(result));
+    client.hset(this.hashKey, key, JSON.stringify(result));
   }
 
   console.log('from mongoDB');
   return result;
+};
+
+module.exports = {
+  clearHash(hashKey) {
+    client.del(JSON.stringify(hashKey));
+  }
 };
