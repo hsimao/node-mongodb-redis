@@ -8,12 +8,19 @@ const client = redis.createClient(redisUrl);
 // make redis get method have promise
 client.get = promisify(client.get);
 
+mongoose.Query.prototype.cache = function () {
+  this.useCache = true;
+  return this;
+};
+
 // 複寫 mongoose exec 方法
 const exec = mongoose.Query.prototype.exec;
 
 mongoose.Query.prototype.exec = async function () {
   // 執行 exec 之前需要做的邏輯, handle cache with redis
-  console.log('Im about to run a query');
+  if (!this.useCache) {
+    return exec.apply(this, arguments);
+  }
 
   // 組成 redis key
   const key = JSON.stringify(
