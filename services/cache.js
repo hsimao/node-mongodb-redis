@@ -8,8 +8,9 @@ const client = redis.createClient(redisUrl);
 // make redis get method have promise
 client.get = promisify(client.get);
 
-mongoose.Query.prototype.cache = function () {
+mongoose.Query.prototype.cache = function (expireSecond = 0) {
   this.useCache = true;
+  this.expireSecond = expireSecond;
   return this;
 };
 
@@ -33,6 +34,7 @@ mongoose.Query.prototype.exec = async function () {
   const cacheValue = await client.get(key);
 
   if (cacheValue) {
+    console.log('from cache');
     // 新增一個 mongo 的資料返回格式
     const doc = JSON.parse(cacheValue);
 
@@ -44,6 +46,14 @@ mongoose.Query.prototype.exec = async function () {
 
   // 執行 mongo exec, 將 result 同步儲存到 redis
   const result = await exec.apply(this, arguments);
-  client.set(key, JSON.stringify(result));
+
+  // 判斷是否有設定過期時間
+  if (this.expireSecond) {
+    client.set(key, JSON.stringify(result), 'EX', this.expireSecond);
+  } else {
+    client.set(key, JSON.stringify(result));
+  }
+
+  console.log('from mongoDB');
   return result;
 };
