@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const requireLogin = require('../middlewares/requireLogin');
-const { clearHash } = require('../services/cache');
+const cleanCache = require('../middlewares/cleanCache');
 
 const Blog = mongoose.model('Blog');
 
@@ -25,9 +25,8 @@ module.exports = app => {
     res.send(blogs);
   });
 
-  app.post('/api/blogs', requireLogin, async (req, res) => {
+  app.post('/api/blogs', requireLogin, cleanCache, async (req, res) => {
     const { title, content } = req.body;
-
     const blog = new Blog({
       title,
       content,
@@ -40,8 +39,5 @@ module.exports = app => {
     } catch (err) {
       res.send(400, err);
     }
-
-    // 有更新文章就清除 redis cache, 讓取得列表時可以從 DB 取得最新資料
-    clearHash(req.user.id);
   });
 };
