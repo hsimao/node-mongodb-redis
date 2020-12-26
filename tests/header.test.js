@@ -25,7 +25,7 @@ it('Clicking login starts oauth flow', async () => {
   expect(url).toMatch(/accounts.google.com/);
 });
 
-it.only('When signed in, shows logout button', async () => {
+it('When signed in, shows logout button', async () => {
   const id = '5f84532d9534d2861c982769';
   const Buffer = require('safe-buffer').Buffer;
   const sessionObject = {
@@ -41,7 +41,6 @@ it.only('When signed in, shows logout button', async () => {
   const keys = require('../config/keys');
   const keygrip = new Keygrip([keys.cookieKey]);
   const sig = keygrip.sign('session=' + sessionString);
-  console.log(sessionString, sig);
 
   await page.setCookie({ name: 'session', value: sessionString });
   await page.setCookie({ name: 'session.sig', value: sig });
