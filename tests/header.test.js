@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 const sessionFactory = require('./factories/sessionFactory');
+const userFactory = require('./factories/userFactory');
 
 let browser, page;
 
@@ -27,15 +28,15 @@ it('Clicking login starts oauth flow', async () => {
 });
 
 it('When signed in, shows logout button', async () => {
-  // const id = '5f84532d9534d2861c982769';
-  const { session, sig } = sessionFactory();
+  const user = await userFactory();
+  const { session, sig } = sessionFactory(user);
 
   await page.setCookie({ name: 'session', value: session });
   await page.setCookie({ name: 'session.sig', value: sig });
   await page.goto('localhost:3000');
 
   // 因為上面刷新頁面按鈕不會馬上出現, 需要透過 waitFor ,等待該元素出現後才接續執行後續邏輯
-  await page.waitFor('a[href="/auth/logou"]');
+  await page.waitFor('a[href="/auth/logout"]');
   const text = await page.$eval('a[href="/auth/logout"]', el => el.innerHTML);
 
   expect(text).toEqual('Logout');
