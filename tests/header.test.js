@@ -1,19 +1,14 @@
-const puppeteer = require('puppeteer');
-const sessionFactory = require('./factories/sessionFactory');
-const userFactory = require('./factories/userFactory');
+const Page = require('./helpers/page');
 
-let browser, page;
+let page;
 
 beforeEach(async () => {
-  browser = await puppeteer.launch({
-    headless: false // 表示要顯示頁面
-  });
-  page = await browser.newPage();
+  page = await Page.build();
   await page.goto('localhost:3000');
 });
 
 afterEach(async () => {
-  await browser.close();
+  await page.close();
 });
 
 it('The header has the correct text', async () => {
@@ -28,13 +23,7 @@ it('Clicking login starts oauth flow', async () => {
 });
 
 it('When signed in, shows logout button', async () => {
-  const user = await userFactory();
-  const { session, sig } = sessionFactory(user);
-
-  await page.setCookie({ name: 'session', value: session });
-  await page.setCookie({ name: 'session.sig', value: sig });
-  await page.goto('localhost:3000');
-
+  await page.login();
   // 因為上面刷新頁面按鈕不會馬上出現, 需要透過 waitFor ,等待該元素出現後才接續執行後續邏輯
   await page.waitFor('a[href="/auth/logout"]');
   const text = await page.$eval('a[href="/auth/logout"]', el => el.innerHTML);
