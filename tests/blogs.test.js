@@ -33,11 +33,21 @@ describe('When logged in', async () => {
 
     it('Submitting takes user to review screen', async () => {
       const text = await page.getContentsOf('h5');
+      await page.waitFor('.container');
 
       expect(text).toEqual('Please confirm your entries');
     });
 
-    it('Submitting then saving adds blog to index page', () => {});
+    it('Submitting then saving adds blog to index page', async () => {
+      await page.click('button.green');
+      await page.waitFor('.card');
+
+      const title = await page.getContentsOf('.card-title');
+      const content = await page.getContentsOf('p');
+
+      expect(title).toEqual('Test Title');
+      expect(content).toEqual('Test Content');
+    });
   });
 
   // input 未輸入直接 submit
