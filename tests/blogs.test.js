@@ -23,6 +23,24 @@ describe('When logged in', async () => {
     expect(label).toEqual('Blog Title');
   });
 
+  // input 欄位輸入正確後 submit
+  describe('And using valid inputs', async () => {
+    beforeEach(async () => {
+      await page.type('.title input', 'Test Title');
+      await page.type('.content input', 'Test Content');
+      await page.click('form button');
+    });
+
+    it('Submitting takes user to review screen', async () => {
+      const text = await page.getContentsOf('h5');
+
+      expect(text).toEqual('Please confirm your entries');
+    });
+
+    it('Submitting then saving adds blog to index page', () => {});
+  });
+
+  // input 未輸入直接 submit
   describe('And using invalid inputs', async () => {
     beforeEach(async () => {
       await page.click('form button');
